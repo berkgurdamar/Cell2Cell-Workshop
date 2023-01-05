@@ -1,9 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-Integrated analysis for scRNA and scATAC seq data
+# Integrated analysis for scRNA and scATAC seq data
 
-# Installation
+## Installation
 
 First, conda environment needs to be created.
 
@@ -16,7 +16,7 @@ Downloading required files.
     wget https://cf.10xgenomics.com/samples/cell-arc/1.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_atac_fragments.tsv.gz.tbi
     wget https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat
 
-# Usage
+## Usage
 
 Activate the environment.
 
