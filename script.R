@@ -1,4 +1,4 @@
-# install.packages(c("BiocManager", "remotes", "qlcMatrix", "ggforce"))
+# install.packages(c("BiocManager", "hdf5r", "remotes", "qlcMatrix", "ggforce"))
 # BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.hg38", "biovizBase"))
 # remotes::install_github("mojaveazure/seurat-disk")
 
