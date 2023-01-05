@@ -14,7 +14,7 @@ First, conda environment needs to be created.
 conda env create -f cell2cell_workshop_env.yml
 ```
 
-Downloading required files.
+Download required files.
 
 ``` 
 wget https://cf.10xgenomics.com/samples/cell-arc/1.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_filtered_feature_bc_matrix.h5
