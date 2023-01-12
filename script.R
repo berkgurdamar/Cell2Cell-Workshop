@@ -1,12 +1,20 @@
-# install.packages(c("BiocManager", "remotes", "qlcMatrix", "ggforce"))
-# BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.hg38", "biovizBase"))
-# remotes::install_github("mojaveazure/seurat-disk")
+install.packages(c("BiocManager", "remotes", "qlcMatrix", "ggforce", "assertthat"))
+BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.hg38", "biovizBase", "RcisTarget", "GENIE3", "org.Hs.eg.db"))
+remotes::install_github("mojaveazure/seurat-disk")
+remotes::install_github("satijalab/seurat-data")
+remotes::install_github("jiang-junyao/IReNA")
+remotes::install_github("cole-trapnell-lab/monocle3")
 
 library(Signac)
 library(Seurat)
 library(EnsDb.Hsapiens.v86)
 library(BSgenome.Hsapiens.UCSC.hg38)
 library(SeuratDisk)
+library(SeuratData)
+library(IReNA)
+library(GENIE3)
+library(monocle)
+library(org.Hs.eg.db)
 
 set.seed(1234)
 
@@ -89,7 +97,7 @@ transfer_anchors <- FindTransferAnchors(reference = reference,
                                         dims = 1:50)
 
 predictions <- TransferData(anchorset = transfer_anchors, 
-                            efdata = reference$celltype.l2,
+                            refdata = reference$celltype.l2,
                             weight.reduction = pbmc[['pca']],
                             dims = 1:50)
 
