@@ -5,6 +5,7 @@
 # remotes::install_github("mojaveazure/seurat-disk")
 # remotes::install_github("satijalab/seurat-data")
 # remotes::install_github("jiang-junyao/IReNA")
+# remotes::install_github('satijalab/seurat-wrappers')
 
 library(Signac)
 library(Seurat)
@@ -237,7 +238,6 @@ p2 <- CoveragePlot(object = pbmc,
 patchwork::wrap_plots(p1, p2, ncol = 1)
 
 
-
 # network analysis --------------------------------------------------------
 
 
@@ -380,3 +380,88 @@ graph = visNetwork(nodes, edges, height = "500px") %>%
              nodesIdSelection = T)
 
 saveWidget(graph, file = "gene_regulatory_network.html")
+
+
+# network analysis 2 ------------------------------------------------------
+
+
+source("/path/to/required_functions.R")
+
+motif1 <- Tranfac201803_Hs_MotifTFsF
+
+seurat_with_time = readRDS("/path/to/seurat_with_time.rds")
+
+load(system.file("extdata", "test_clustering.rda", package = "IReNA"))
+
+expression_profile = test_clustering[,-1]
+
+expression_profile <- na.omit(expression_profile)
+
+# K-means clustering
+clustering <- clustering_Kmeans(expression_profile, K1 = 4) #cluster number
+
+plot_kmeans_pheatmap(clustering,ModuleColor1 = c('#67C7C1','#5BA6DA','#FFBF0F','#C067A9'))
+
+# Add Ensembl ID as the first column of clustering results
+Kmeans_clustering_ENS <- add_ENSID(clustering, Spec1 = 'Hs')
+
+weightMat <- GENIE3(as.matrix(seurat_with_time@assays$RNA@data), nCores = 10)
+
+weightMat <- getLinkList(weightMat)
+
+regulation <- weightMat[weightMat[,3] > 0.0004, ]
+
+regulatory_relationships <- add_regulation_type(Kmeans_clustering_ENS, regulation)
+
+motif1 = Tranfac201803_Hs_MotifTFsF
+
+motifTF <- c()
+for (i in 1:nrow(motif1)) {
+  TF <- strsplit(motif1[i,5],';')[[1]]
+  motifTF <- c(motifTF,TF)
+}
+
+regulatory_relationships <- regulatory_relationships[regulatory_relationships[,1] %in% motifTF,]
+
+gtf <- read.delim("/path/to/Homo_sapiens.GRCh38.108.chr.gtf", header=FALSE, comment.char="#")
+
+gtf[,1] <- paste0('chr',gtf[,1])
+gene_tss <- get_tss_region(gtf,rownames(Kmeans_clustering_ENS))
+
+### Identify differentially expressed genes related motifs
+motif1 <- motifs_select(Tranfac201803_Hs_MotifTFsF, rownames(Kmeans_clustering_ENS)) # Kmeans_clustering_ENS was obtained in part1
+
+fimodir <- "/path/to/fimo"
+outputdir1 <- '/path/to/out_dir/'
+motifdir <- "/path/to/motif/"
+refdir <- "/path/to/hg38.fa"
+
+find_motifs_targetgenes2(gene_tss,
+                         motif1, 
+                         refdir,
+                         fimodir,
+                         outputdir1,
+                         motifdir)
+
+### run fimo_all script in shell
+shell_code <- paste0('sh ', outputdir1, 'fimo/fimoall.sh')
+system(shell_code, wait = TRUE)
+
+motif2 <- Tranfac201803_Hs_MotifTFsF
+outputdir <- paste0(outputdir1,'fimo/')
+fimo_regulation <- generate_fimo_regulation(outputdir,motif2)
+filtered_regulatory_relationships <- filter_regulation_fimo(fimo_regulation, regulatory_relationships)
+
+TFs_list <- network_analysis(filtered_regulatory_relationships,Kmeans_clustering_ENS,TFFDR1 = 10,TFFDR2 = 10)
+
+plot_tf_network(TFs_list)
+
+enrichment_KEGG <- enrich_module(Kmeans_clustering_ENS, 
+                                 org.Hs.eg.db,
+                                 enrich.db = 'KEGG',
+                                 organism = 'hsa',
+                                 fun_num = 10, 
+                                 use_internal_data = FALSE)
+
+plot_intramodular_network(TFs_list,enrichment_KEGG,layout = 'circle')
+
