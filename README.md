@@ -16,6 +16,12 @@ Download required files.
     wget https://cf.10xgenomics.com/samples/cell-arc/1.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_atac_fragments.tsv.gz.tbi
     wget https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat
 
+    wget https://ftp.ensembl.org/pub/release-108/gtf/homo_sapiens/Homo_sapiens.GRCh38.108.chr.gtf.gz
+    gunzip Homo_sapiens.GRCh38.108.chr.gtf.gz
+
+    wget https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
+    gunzip hg38.fa.gz
+
 Download required tool.
 
     wget https://meme-suite.org/meme/meme-software/5.4.1/meme-5.4.1.tar.gz
@@ -41,6 +47,7 @@ BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.h
 remotes::install_github("mojaveazure/seurat-disk")
 remotes::install_github("satijalab/seurat-data")
 remotes::install_github("jiang-junyao/IReNA")
+remotes::install_github('satijalab/seurat-wrappers')
 ```
 
 For peak calling, Macs2 path needs to be specified. It can be found by
