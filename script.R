@@ -1,20 +1,26 @@
-install.packages(c("BiocManager", "remotes", "qlcMatrix", "ggforce", "assertthat"))
-BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.hg38", "biovizBase", "RcisTarget", "GENIE3", "org.Hs.eg.db"))
-remotes::install_github("mojaveazure/seurat-disk")
-remotes::install_github("satijalab/seurat-data")
-remotes::install_github("jiang-junyao/IReNA")
-remotes::install_github("cole-trapnell-lab/monocle3")
+# install.packages(c("BiocManager", "remotes", "qlcMatrix", "ggforce", "assertthat"))
+# BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.hg38", 
+#                        "biovizBase", "RcisTarget", "org.Hs.eg.db",
+#                        "TxDb.Hsapiens.UCSC.hg38.knownGene", "RCy3"))
+# remotes::install_github("mojaveazure/seurat-disk")
+# remotes::install_github("satijalab/seurat-data")
+# remotes::install_github("jiang-junyao/IReNA")
 
 library(Signac)
 library(Seurat)
 library(EnsDb.Hsapiens.v86)
 library(BSgenome.Hsapiens.UCSC.hg38)
 library(SeuratDisk)
-library(SeuratData)
 library(IReNA)
-library(GENIE3)
-library(monocle)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(RCy3)
+library(GenomicRanges)
 library(org.Hs.eg.db)
+library(annotate)
+library(stringr)
+library(dplyr)
+library(visNetwork)
+library(htmlwidgets)
 
 set.seed(1234)
 
@@ -229,3 +235,148 @@ p2 <- CoveragePlot(object = pbmc,
                    extend.downstream = 5000)
 
 patchwork::wrap_plots(p1, p2, ncol = 1)
+
+
+
+# network analysis --------------------------------------------------------
+
+
+# All peak should be linked to genes
+pbmc <- LinkPeaks(object = pbmc,
+                  peak.assay = "peaks",
+                  expression.assay = "SCT")
+
+link_of_peaks = as.data.frame(Links(pbmc))
+
+interval1 = str_split_fixed(link_of_peaks$peak, '-', 3)
+
+interval1 = as.data.frame(interval1)
+
+colnames(interval1) = c("Chromosome", "Start", "End")
+
+intervals = GenomicRanges::makeGRangesFromDataFrame(interval1)
+
+txdb = TxDb.Hsapiens.UCSC.hg38.knownGene
+
+genes = genes(txdb)
+
+## Peak locations and overlapping genes
+annotateIntervals <- function(intervals, txdb){
+  
+  stopifnot(is(intervals, "GRanges"), is(txdb, "TxDb"))
+  anno = genes(txdb)
+  olaps = findOverlaps(intervals, anno)
+  mcols(olaps)$gene_id = genes$gene_id[subjectHits(olaps)]
+  intervals_factor = factor(queryHits(olaps), levels=seq_len(queryLength(olaps)))
+  intervals$gene_id = splitAsList(mcols(olaps)$gene_id, intervals_factor)
+  intervals
+  
+}  
+
+myAnnotation <- as.data.frame(annotateIntervals(intervals, txdb))
+
+myDf_master <- data.frame()
+for (i in 1:length(myAnnotation$gene_id)) {
+  
+  # if the gene list is not empty...
+  if(length(c(na.omit(myAnnotation$gene_id[i])[[1]])) != 0) {
+    
+    # annotate the interval and copy into a myDf data.frame
+    myDf <- data.frame(myAnnotation$seqnames[i], 
+                       myAnnotation$start[i], 
+                       myAnnotation$end[i], 
+                       toString(unname(getSYMBOL(c(na.omit(myAnnotation$gene_id[i])[[1]]), data='org.Hs.eg'))))
+    
+    # append tge myDF annotations with rbind into the myDf_master
+    myDf_master <- rbind(myDf_master, myDf)
+  }
+}
+
+myDf_header <- c("Chromosome", "Start", "End", "Genes")
+names(myDf_master) <- myDf_header
+
+myDf_master[c('Gene1','Gene_Other')] = str_split_fixed(myDf_master$Genes, ',', 2)
+
+myDf_master$peaks = paste(myDf_master$Chromosome, 
+                          myDf_master$Start, 
+                          myDf_master$End, 
+                          sep='-')
+
+
+## Network Creation
+link_of_genes = merge(x = link_of_peaks,
+                      y = myDf_master, 
+                      by.x = 'peak', 
+                      by.y = "peaks")
+
+link_only_trancription_factors = merge(x = link_of_genes,
+                                       y = Tranfac201803_Hs_MotifTFsF,
+                                       all.x = F, 
+                                       all.y = F, 
+                                       by.x = 'Gene1', 
+                                       by.y = "TFs")
+
+link_only_trancription_factors_filtered = link_only_trancription_factors[link_only_trancription_factors$pvalue < 0.01,]
+
+link_only_trancription_factors_filtered["interaction"]<-NA
+for(i in 1:length(link_only_trancription_factors_filtered$score)){
+  
+  if(link_only_trancription_factors_filtered$score[i]<=0){
+    link_only_trancription_factors_filtered$interaction[i]<-'inhibits'
+  }else if (link_only_trancription_factors_filtered$score[i]>= 0){
+    link_only_trancription_factors_filtered$interaction[i]<-'activates' 
+  }else{
+    link_only_trancription_factors_filtered$interaction[i]<-'interacts'
+  }
+  
+}
+
+nodes_dup = list(append(link_only_trancription_factors_filtered$Gene1, link_only_trancription_factors_filtered$gene))
+
+un <- unlist(nodes_dup)
+node_no_dup <- Map(`[`, nodes_dup, relist(!duplicated(un), skeleton = nodes_dup))
+
+index = 1
+groups = c()
+for (i in 1:length((node_no_dup[[1]]))){
+  if(node_no_dup[[1]][i] %in% Tranfac201803_Hs_MotifTFsF$TFs){
+    groups[i]='TF'
+  }
+  else{
+    groups[i]='Gene' 
+  }
+}
+
+nodes = data.frame(id = node_no_dup,group=groups, 
+                   label = node_no_dup)
+colnames(nodes) = c('id', 'group', 'label')
+
+edges = data.frame(from = link_only_trancription_factors_filtered$Gene1,
+                   to =link_only_trancription_factors_filtered$gene, 
+                   interaction = link_only_trancription_factors_filtered$interaction) 
+
+edges = distinct(edges)
+
+edge.color2 <- c()
+for (i in edges$interaction) {
+  if (i == "activates") {
+    edge.color2 <- c(edge.color2, 'red')
+  }
+  else if (i == "inhibits") {
+    edge.color2 <- c(edge.color2, 'blue')
+  }
+}
+
+edges$color = edge.color2
+
+graph = visNetwork(nodes, edges, height = "500px") %>%
+  #visIgraphLayout(layout = "layout_in_circle") %>%
+  visIgraphLayout() %>%
+  visNodes(size = 10) %>%
+  visGroups(group = "Gene", color = "#66AAAA", shape = "square", 
+            shadow = list(enabled = TRUE)) %>%
+  visGroups(group = "TF", color = "#FF9900", shape = "triangle") %>%
+  visOptions(highlightNearest = list(enabled = T, hover = T), 
+             nodesIdSelection = T)
+
+saveWidget(graph, file = "gene_regulatory_network.html")
