@@ -15,7 +15,6 @@ Download required files.
     wget https://cf.10xgenomics.com/samples/cell-arc/1.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_atac_fragments.tsv.gz
     wget https://cf.10xgenomics.com/samples/cell-arc/1.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_atac_fragments.tsv.gz.tbi
     wget https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat
-    wget https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
 
 Download required tool.
 
@@ -36,11 +35,12 @@ Start a new R session by typing `R` and download required packages.
 
 ``` r
 install.packages(c("BiocManager", "remotes", "qlcMatrix", "ggforce", "assertthat"))
-BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.hg38", "biovizBase", "RcisTarget", "GENIE3", "org.Hs.eg.db"))
+BiocManager::install(c("Signac", "EnsDb.Hsapiens.v86", "BSgenome.Hsapiens.UCSC.hg38", 
+                       "biovizBase", "RcisTarget", "org.Hs.eg.db",
+                       "TxDb.Hsapiens.UCSC.hg38.knownGene", "RCy3"))
 remotes::install_github("mojaveazure/seurat-disk")
 remotes::install_github("satijalab/seurat-data")
 remotes::install_github("jiang-junyao/IReNA")
-remotes::install_github("cole-trapnell-lab/monocle3")
 ```
 
 For peak calling, Macs2 path needs to be specified. It can be found by
