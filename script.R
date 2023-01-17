@@ -161,6 +161,8 @@ p1 <- CoveragePlot(object = pbmc,
                    extend.upstream = 500,
                    extend.downstream = 10000)
 
+ggsave(plot = p1, filename = "MS4A1_1.jpg", dpi = "retina")
+
 p2 <- CoveragePlot(object = pbmc,
                    region = "LYZ",
                    features = "LYZ",
@@ -168,6 +170,8 @@ p2 <- CoveragePlot(object = pbmc,
                    idents = idents.plot,
                    extend.upstream = 8000,
                    extend.downstream = 5000)
+
+ggsave(plot = p2, filename = "LYZ_1.jpg", dpi = "retina")
 
 patchwork::wrap_plots(p1, p2, ncol = 1)
 
@@ -179,9 +183,10 @@ reference <- RunPCA(reference)
 reference <- RunUMAP(reference, dims = 1:50)
 DefaultAssay(pbmc) <- "SCT"
 
-transfer.anchors <- FindTransferAnchors(reference = reference, query = pbmc, reduction = "cca")
+# transfer.anchors <- FindTransferAnchors(reference = reference, query = pbmc, reduction = "cca")
+transfer.anchors <- readRDS("transfer.anchors.rds")
 
-predictions <- TransferData(anchorset = transfer_anchors, 
+predictions <- TransferData(anchorset = transfer.anchors, 
                             refdata = reference$celltype.l2,
                             weight.reduction = pbmc[['pca']],
                             dims = 1:50)
@@ -227,6 +232,8 @@ p1 <- CoveragePlot(object = pbmc,
                    extend.upstream = 500,
                    extend.downstream = 10000)
 
+ggsave(plot = p1, filename = "MS4A1_2.jpg", dpi = "retina")
+
 p2 <- CoveragePlot(object = pbmc,
                    region = "LYZ",
                    features = "LYZ",
@@ -235,6 +242,8 @@ p2 <- CoveragePlot(object = pbmc,
                    extend.upstream = 8000,
                    extend.downstream = 5000)
 
+ggsave(plot = p2, filename = "LYZ_2.jpg", dpi = "retina")
+
 patchwork::wrap_plots(p1, p2, ncol = 1)
 
 
@@ -242,9 +251,11 @@ patchwork::wrap_plots(p1, p2, ncol = 1)
 
 
 # All peak should be linked to genes
-pbmc <- LinkPeaks(object = pbmc,
-                  peak.assay = "peaks",
-                  expression.assay = "SCT")
+# pbmc <- LinkPeaks(object = pbmc,
+#                   peak.assay = "peaks",
+#                   expression.assay = "SCT")
+
+pbmc <- readRDS("pbmc_network.rds")
 
 link_of_peaks = as.data.frame(Links(pbmc))
 
@@ -316,7 +327,6 @@ link_only_trancription_factors = merge(x = link_of_genes,
                                        by.x = 'Gene1', 
                                        by.y = "TFs")
 
-link_only_trancription_factors_filtered = link_only_trancription_factors[link_only_trancription_factors$pvalue < 0.01,]
 
 link_only_trancription_factors_filtered["interaction"]<-NA
 for(i in 1:length(link_only_trancription_factors_filtered$score)){
@@ -385,11 +395,11 @@ saveWidget(graph, file = "gene_regulatory_network.html")
 # network analysis 2 ------------------------------------------------------
 
 
-source("/path/to/required_functions.R")
+source("required_functions.R")
 
 motif1 <- Tranfac201803_Hs_MotifTFsF
 
-seurat_with_time = readRDS("/path/to/seurat_with_time.rds")
+seurat_with_time = readRDS("seurat_with_time.rds")
 
 load(system.file("extdata", "test_clustering.rda", package = "IReNA"))
 
@@ -450,9 +460,13 @@ system(shell_code, wait = TRUE)
 motif2 <- Tranfac201803_Hs_MotifTFsF
 outputdir <- paste0(outputdir1,'fimo/')
 fimo_regulation <- generate_fimo_regulation(outputdir,motif2)
-filtered_regulatory_relationships <- filter_regulation_fimo(fimo_regulation, regulatory_relationships)
 
-TFs_list <- network_analysis(filtered_regulatory_relationships,Kmeans_clustering_ENS,TFFDR1 = 10,TFFDR2 = 10)
+filtered_regulatory_relationships <- filter_regulation_fimo(fimo_regulation, 
+                                                            regulatory_relationships)
+
+TFs_list <- network_analysis(filtered_regulatory_relationships,
+                             Kmeans_clustering_ENS,TFFDR1 = 10,
+                             TFFDR2 = 10)
 
 plot_tf_network(TFs_list)
 
@@ -463,5 +477,7 @@ enrichment_KEGG <- enrich_module(Kmeans_clustering_ENS,
                                  fun_num = 10, 
                                  use_internal_data = FALSE)
 
-plot_intramodular_network(TFs_list,enrichment_KEGG,layout = 'circle')
+plot_intramodular_network(TFs_list,
+                          enrichment_KEGG,
+                          layout = 'circle')
 
