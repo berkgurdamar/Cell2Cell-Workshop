@@ -22,6 +22,9 @@ Download required files.
     wget https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
     gunzip hg38.fa.gz
 
+    curl -o pbmc_network.rds -L 'https://drive.google.com/uc?export=download&confirm=yes&id=1jWZAA2l6ePa4JtFv2eViwCmSgINI72Lk'
+    curl -o transfer.anchors.rds -L 'https://drive.google.com/uc?export=download&confirm=yes&id=1Y8TufsX4A6NynBksrLPJ0Mgvs1Y6dBrr'
+
 Download required tool.
 
     wget https://meme-suite.org/meme/meme-software/5.4.1/meme-5.4.1.tar.gz
