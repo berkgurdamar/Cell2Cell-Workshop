@@ -27,7 +27,7 @@ Download required files.
 
 Download required tool.
 
-    wget https://meme-suite.org/meme/meme-software/5.4.1/meme-5.4.1.tar.gz
+    wget https://meme-suite.org/meme/meme-software/5.5.0/meme-5.5.0.tar.gz 
     tar -xf meme-5.5.0.tar.gz
     cd meme-5.5.0
     ./configure
