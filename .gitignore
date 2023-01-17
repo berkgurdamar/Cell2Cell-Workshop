@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 *.Rproj
+pbmc_network.rds
+*.h5seurat
+transfer.anchors.rds
