@@ -38,7 +38,7 @@ Download required tool.
 wget https://meme-suite.org/meme/meme-software/5.5.0/meme-5.5.0.tar.gz 
 tar -xf meme-5.5.0.tar.gz
 cd meme-5.5.0
-./configure
+./configure --enable-build-libxml2 --enable-build-libxslt
 make
 make install
 ```
