@@ -328,20 +328,20 @@ link_only_trancription_factors = merge(x = link_of_genes,
                                        by.y = "TFs")
 
 
-link_only_trancription_factors_filtered["interaction"]<-NA
-for(i in 1:length(link_only_trancription_factors_filtered$score)){
+link_only_trancription_factors["interaction"]<-NA
+for(i in 1:length(link_only_trancription_factors$score)){
   
-  if(link_only_trancription_factors_filtered$score[i]<=0){
-    link_only_trancription_factors_filtered$interaction[i]<-'inhibits'
-  }else if (link_only_trancription_factors_filtered$score[i]>= 0){
-    link_only_trancription_factors_filtered$interaction[i]<-'activates' 
+  if(link_only_trancription_factors$score[i]<=0){
+    link_only_trancription_factors$interaction[i]<-'inhibits'
+  }else if (link_only_trancription_factors$score[i]>= 0){
+    link_only_trancription_factors$interaction[i]<-'activates' 
   }else{
-    link_only_trancription_factors_filtered$interaction[i]<-'interacts'
+    link_only_trancription_factors$interaction[i]<-'interacts'
   }
   
 }
 
-nodes_dup = list(append(link_only_trancription_factors_filtered$Gene1, link_only_trancription_factors_filtered$gene))
+nodes_dup = list(append(link_only_trancription_factors$Gene1, link_only_trancription_factors$gene))
 
 un <- unlist(nodes_dup)
 node_no_dup <- Map(`[`, nodes_dup, relist(!duplicated(un), skeleton = nodes_dup))
@@ -361,9 +361,9 @@ nodes = data.frame(id = node_no_dup,group=groups,
                    label = node_no_dup)
 colnames(nodes) = c('id', 'group', 'label')
 
-edges = data.frame(from = link_only_trancription_factors_filtered$Gene1,
-                   to =link_only_trancription_factors_filtered$gene, 
-                   interaction = link_only_trancription_factors_filtered$interaction) 
+edges = data.frame(from = link_only_trancription_factors$Gene1,
+                   to =link_only_trancription_factors$gene, 
+                   interaction = link_only_trancription_factors$interaction) 
 
 edges = distinct(edges)
 
